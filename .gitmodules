@@ -1,0 +1,9 @@
+[submodule "external/HtmlBuilder"]
+	path = external/HtmlBuilder
+	url = https://github.com/SRombauts/HtmlBuilder.git
+[submodule "external/yaml-cpp"]
+	path = external/yaml-cpp
+	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "external/abseil-cpp"]
+	path = external/abseil-cpp
+	url = https://github.com/abseil/abseil-cpp.git
