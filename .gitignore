@@ -1,0 +1,14 @@
+build/
+
+*.aux
+*.tex
+*.dot
+*.fdb_latexmk
+*.fls
+*.log
+*.pdf
+
+*.clangd/
+*.color_coded
+*.ycm_extra_conf.py
+compile_commands.json
