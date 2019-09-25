@@ -14,6 +14,9 @@ ABSL_FLAG(std::string, graph_yaml, "sg20_graph.yaml",
           "path to the yaml specification file.");
 ABSL_FLAG(std::string, output, "sg20_graph.dot",
           "filename for the generated dot file.");
+ABSL_FLAG(bool, useHTMLDotGraph, false, "Generate an HTML Dot graph instead.");
+ABSL_FLAG(bool, includeDependencies, false,
+          "Generate an HTML Dot graph with dependencies.");
 
 int main(int argc, char *argv[]) {
   absl::SetProgramUsageMessage(
@@ -30,7 +33,14 @@ int main(int argc, char *argv[]) {
 
   auto MC = sg20::ModuleCollection::loadModulesFromFile(yamlInputFile);
 
-  sg20::emitFullDotGraph(MC,
-                         std::filesystem::path(absl::GetFlag(FLAGS_output)));
+  if (absl::GetFlag(FLAGS_useHTMLDotGraph)) {
+    sg20::emitHTMLDotGraph(MC,
+                           std::filesystem::path(absl::GetFlag(FLAGS_output)),
+                           absl::GetFlag(FLAGS_includeDependencies));
+  } else {
+    sg20::emitFullDotGraph(MC,
+                           std::filesystem::path(absl::GetFlag(FLAGS_output)));
+  }
+
   return 0;
 }

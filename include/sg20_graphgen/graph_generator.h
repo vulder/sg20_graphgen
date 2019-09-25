@@ -10,6 +10,10 @@ namespace sg20 {
 void emitFullDotGraph(const ModuleCollection &moduleCollection,
                       std::filesystem::path outputFilename);
 
+void emitHTMLDotGraph(const ModuleCollection &moduleCollection,
+                      std::filesystem::path outputFilename,
+                      bool includeDependecies = false);
+
 } // namespace sg20
 
 #endif // SG20_GRAPHGEN_GRAPHGENERATOR_H

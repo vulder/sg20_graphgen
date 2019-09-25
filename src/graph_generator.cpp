@@ -1,4 +1,6 @@
 #include "sg20_graphgen/graph_generator.h"
+#include "sg20_graphgen/html_generator.h"
+#include "sg20_graphgen/modules.h"
 
 #include "boost/graph/adjacency_list.hpp"
 #include "boost/graph/graph_selectors.hpp"
@@ -82,6 +84,52 @@ void emitFullDotGraph(const ModuleCollection &moduleCollection,
   std::cout << "Storing graph into " << outputFilename << "\n";
   std::ofstream outputFile(outputFilename);
   write_graphviz(outputFile, graph);
+}
+
+void generateDependencies(const ModuleCollection &moduleCollection,
+                          std::ofstream &out) {
+  for (auto &module : moduleCollection.modules()) {
+    for (auto topic : module->topics()) {
+      for (auto dep : topic.dependencies()) {
+        Module *depModule = moduleCollection.getModuleFromTopicID(dep);
+        if (depModule) {
+          out << module->getModuleID() << ":" << topic.getID() << " -> "
+              << depModule->getModuleID() << ":" << dep << ";\n";
+        }
+      }
+
+      for (auto dep : topic.softDependencies()) {
+        Module *depModule = moduleCollection.getModuleFromTopicID(dep);
+        if (depModule) {
+          out << module->getModuleID() << ":" << topic.getID() << " -> "
+              << depModule->getModuleID() << ":" << dep << "[style=\""
+              << "dotted"
+              << "\"]"
+              << ";\n";
+        }
+      }
+    }
+  }
+}
+
+void emitHTMLDotGraph(const ModuleCollection &moduleCollection,
+                      std::filesystem::path outputFilename,
+                      bool includeDependecies) {
+  std::cout << "Storing graph into " << outputFilename << "\n";
+  std::ofstream outputFile(outputFilename);
+  outputFile << "digraph main {\n";
+
+  for (auto &module : moduleCollection.modules()) {
+    outputFile << module->getModuleID() << "[shape=box"
+               << ", label=<" << generateDotHTMLTable(*(module.get()))
+               << ">];\n";
+  }
+
+  if (includeDependecies) {
+    generateDependencies(moduleCollection, outputFile);
+  }
+
+  outputFile << "}";
 }
 
 } // namespace sg20

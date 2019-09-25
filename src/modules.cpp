@@ -68,4 +68,14 @@ ModuleCollection::loadModulesFromFile(std::filesystem::path filepath) {
   return newMCollection;
 }
 
+Module *ModuleCollection::getModuleFromTopicID(int topicID) const {
+  for (auto &module : modules()) {
+    auto *topic = module->findTopic(topicID);
+    if (topic) {
+      return module.get();
+    }
+  }
+  return nullptr;
+}
+
 } // namespace sg20

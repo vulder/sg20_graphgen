@@ -107,6 +107,10 @@ public:
     return topics;
   }
 
+  // Tries to find the module containing the specified topicID.
+  // If found returns the module, otherwise, nullptr.
+  Module *getModuleFromTopicID(int topicID) const;
+
 private:
   ModuleCollection() = default;
   ModulesStorageTy modules_storage;

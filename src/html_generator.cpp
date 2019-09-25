@@ -15,6 +15,9 @@ using std::move;
 
 namespace sg20 {
 
+//===----------------------------------------------------------------------===//
+// HTML generator functions
+
 Table generateHTMLTable(const ModuleCollection &moduleCollection, int maxRows) {
   Table newTable;
 
@@ -49,6 +52,34 @@ Col generateHTMLCol(const Module &module) {
   }
 
   return newColumn;
+}
+
+//===----------------------------------------------------------------------===//
+// Dot HTML generator functions
+
+Table generateDotHTMLTable(const Module &module) {
+  Table newTable;
+  newTable.addAttribute("border", "0");
+
+  Row row;
+  Col col = Col(module.getModuleName());
+  col.addAttribute("border", "1");
+
+  row << std::move(col);
+
+  newTable << std::move(row);
+
+  for (auto topic : module.topics()) {
+    row = Row();
+    Col col = Col(topic.getName());
+    col.addAttribute("border", "0");
+    col.addAttribute("align", "left");
+    col.addAttribute("port", topic.getID());
+    row << std::move(col);
+    newTable << std::move(row);
+  }
+
+  return newTable;
 }
 
 } // namespace sg20
