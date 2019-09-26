@@ -1,6 +1,10 @@
 #ifndef SG20_GRAPHGEN_UTIL_H
 #define SG20_GRAPHGEN_UTIL_H
 
+#include "yaml-cpp/emitter.h"
+#include "yaml-cpp/emittermanip.h"
+#include "yaml-cpp/yaml.h"
+
 #include <iterator>
 #include <type_traits>
 
@@ -23,6 +27,17 @@ template <typename IteratorType>
 auto make_range(IteratorType begin, IteratorType end) {
   return util_range<IteratorType>(std::move(begin), std::move(end));
 }
+
+class YAMLMap {
+public:
+  YAMLMap(YAML::Emitter &emitter) : outputEmitter(emitter) {
+    outputEmitter << YAML::BeginMap;
+  }
+  ~YAMLMap() { outputEmitter << YAML::EndMap; }
+
+private:
+  YAML::Emitter &outputEmitter;
+};
 
 } // namespace sg20
 

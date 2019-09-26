@@ -34,6 +34,9 @@ public:
   void addDependency(int TID) { deps.push_back(TID); }
   void addSoftDependency(int TID) { softDeps.push_back(TID); }
 
+  size_t numDependencies() const { return deps.size(); }
+  size_t numSoftDependencies() const { return softDeps.size(); }
+
   void dump(std::ostream &out);
 
 private:
@@ -88,6 +91,8 @@ public:
   using ModulesStorageTy = std::vector<std::unique_ptr<Module>>;
 
   static ModuleCollection loadModulesFromFile(std::filesystem::path filepath);
+  static void storeModulesToFile(const ModuleCollection &MC,
+                                 std::filesystem::path filepath);
 
 public:
   auto modules_begin() { return modules_storage.begin(); }
