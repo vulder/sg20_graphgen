@@ -5,7 +5,9 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <memory>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace sg20 {
@@ -15,6 +17,7 @@ public:
   Topic(const std::string name, int ID) : name(name), ID(ID) {}
 
   std::string getName() const { return name; }
+  void rename(std::string newName) { name = newName; }
   int getID() const { return ID; }
 
   auto deps_begin() { return deps.begin(); }
@@ -40,7 +43,7 @@ public:
   void dump(std::ostream &out);
 
 private:
-  const std::string name;
+  std::string name;
   const int ID;
   std::vector<int> deps;
   std::vector<int> softDeps;
@@ -56,15 +59,17 @@ public:
   size_t numTopics() const { return topics_list.size(); }
 
   inline Topic &addTopic(const std::string name, int TID) {
-    topics_list.emplace_back(std::move(name), TID);
-    return topics_list.back();
+    topics_list.push_back(std::make_unique<Topic>(std::move(name), TID));
+    return *topics_list.back();
   }
+
+  void removeTopic(const std::string_view topicName);
 
   const Topic *findTopic(int TID) {
     auto find = std::find_if(topics_list.begin(), topics_list.end(),
-                             [TID](const Topic t) { return t.getID() == TID; });
+                             [TID](auto &t) { return t->getID() == TID; });
     if (find != topics_list.end()) {
-      return &(*find);
+      return find->get();
     }
 
     return nullptr;
@@ -83,7 +88,7 @@ public:
 private:
   const std::string moduleName;
   const int moduleID;
-  std::vector<Topic> topics_list;
+  std::vector<std::unique_ptr<Topic>> topics_list;
 };
 
 class ModuleCollection {
@@ -116,9 +121,22 @@ public:
   // If found returns the module, otherwise, nullptr.
   Module *getModuleFromTopicID(int topicID) const;
 
+  // Tries to find a module with the specified moduleName.
+  // If found returns the module, otherwise, nullptr.
+  Module *getModuleFromName(std::string_view moduleName) const;
+
+  Module &addModule(std::string moduleName);
+  void deleteModule(int moduleID);
+
+  Topic *addTopicToModule(std::string topicName,
+                          const std::string_view moduleName);
+
 private:
   ModuleCollection() = default;
-  ModulesStorageTy modules_storage;
+  int getNextFreeModuleID() const;
+  int getNextFreeTopicID() const;
+
+  ModulesStorageTy modules_storage{};
 };
 
 } // namespace sg20

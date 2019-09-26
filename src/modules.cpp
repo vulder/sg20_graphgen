@@ -6,9 +6,11 @@
 #include "yaml-cpp/node/convert.h"
 #include "yaml-cpp/yaml.h"
 
+#include <algorithm>
 #include <cassert>
 #include <fstream>
 #include <iostream>
+#include <memory>
 
 namespace sg20 {
 
@@ -28,12 +30,21 @@ void Topic::dump(std::ostream &out) {
   out << "]\n";
 }
 
+void Module::removeTopic(const std::string_view topicName) {
+  auto delTopicIter = std::find_if(
+      topics_list.begin(), topics_list.end(),
+      [topicName](auto &topic) { return topic->getName() == topicName; });
+  if (delTopicIter != topics_list.end()) {
+    topics_list.erase(delTopicIter);
+  }
+}
+
 void Module::dump(std::ostream &out) {
   out << "ModuleName: " << getModuleName() << " ID: " << getModuleID() << "\n";
   out << "  Topics: \n";
   for (auto &topic : topics()) {
     out << "    - ";
-    topic.dump(out);
+    topic->dump(out);
   }
   out << "\n";
 }
@@ -87,26 +98,26 @@ void ModuleCollection::storeModulesToFile(const ModuleCollection &MC,
       yamlOut << "mid" << module->getModuleID();
       yamlOut << "sub" << YAML::BeginSeq;
 
-      for (auto topic : module->topics()) {
+      for (auto &topic : module->topics()) {
         YAMLMap yamlTopicMap(yamlOut);
 
-        yamlOut << "name" << topic.getName();
-        yamlOut << "tid" << topic.getID();
+        yamlOut << "name" << topic->getName();
+        yamlOut << "tid" << topic->getID();
 
-        if (topic.numDependencies()) {
+        if (topic->numDependencies()) {
           yamlOut << "dep";
 
           yamlOut << YAML::BeginSeq;
-          for (auto dep : topic.dependencies()) {
+          for (auto dep : topic->dependencies()) {
             yamlOut << dep;
           }
           yamlOut << YAML::EndSeq;
         }
 
-        if (topic.numSoftDependencies()) {
+        if (topic->numSoftDependencies()) {
           yamlOut << "softdep";
           yamlOut << YAML::BeginSeq;
-          for (auto dep : topic.softDependencies()) {
+          for (auto dep : topic->softDependencies()) {
             yamlOut << dep;
           }
           yamlOut << YAML::EndSeq;
@@ -132,6 +143,72 @@ Module *ModuleCollection::getModuleFromTopicID(int topicID) const {
     }
   }
   return nullptr;
+}
+
+Module *ModuleCollection::getModuleFromName(std::string_view moduleName) const {
+  for (auto &module : modules()) {
+    if (module->getModuleName().compare(0, moduleName.length(), moduleName) ==
+        0) {
+      return module.get();
+    }
+  }
+  return nullptr;
+}
+
+Module &ModuleCollection::addModule(std::string moduleName) {
+  modules_storage.push_back(
+      std::make_unique<Module>(std::move(moduleName), getNextFreeModuleID()));
+  return *modules_storage.back().get();
+}
+
+void ModuleCollection::deleteModule(int moduleID) {
+  auto delModuleIter = std::find_if(
+      modules_storage.begin(), modules_storage.end(),
+      [moduleID](auto &module) { return module->getModuleID() == moduleID; });
+  if (delModuleIter != modules_storage.end()) {
+    modules_storage.erase(delModuleIter);
+  }
+}
+
+Topic *ModuleCollection::addTopicToModule(std::string topicName,
+                                          const std::string_view moduleName) {
+  std::cout << moduleName << "\n";
+  auto *module = getModuleFromName(moduleName);
+  if (module) {
+    return &module->addTopic(std::move(topicName), getNextFreeTopicID());
+  }
+  return nullptr;
+}
+
+int ModuleCollection::getNextFreeModuleID() const {
+  if (modules_storage.size() == 0) {
+    return 1;
+  }
+  auto &module = *std::max_element(
+      modules_begin(), modules_end(), [](auto &module1, auto &module2) {
+        return module1->getModuleID() < module2->getModuleID();
+      });
+  return module->getModuleID() + 1;
+}
+
+int ModuleCollection::getNextFreeTopicID() const {
+  int maxID = 0;
+
+  for (auto &module : modules()) {
+    if (module->numTopics() == 0) {
+      continue;
+    }
+    auto &localMaxTopic =
+        *std::max_element(module->topics_begin(), module->topics_end(),
+                          [](auto &topic1, auto &topic2) {
+                            return topic1->getID() < topic2->getID();
+                          });
+    if (localMaxTopic->getID() > maxID) {
+      maxID = localMaxTopic->getID();
+    }
+  }
+
+  return maxID + 1;
 }
 
 } // namespace sg20

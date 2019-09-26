@@ -45,8 +45,8 @@ Col generateHTMLCol(const Module &module) {
 
   {
     List topicList;
-    for (auto topic : module.topics()) {
-      topicList << ListItem(topic.getName());
+    for (auto &topic : module.topics()) {
+      topicList << ListItem(topic->getName());
     }
     newColumn << move(topicList);
   }
@@ -69,12 +69,12 @@ Table generateDotHTMLTable(const Module &module) {
 
   newTable << std::move(row);
 
-  for (auto topic : module.topics()) {
+  for (auto &topic : module.topics()) {
     row = Row();
-    Col col = Col(topic.getName());
+    Col col = Col(topic->getName());
     col.addAttribute("border", "0");
     col.addAttribute("align", "left");
-    col.addAttribute("port", topic.getID());
+    col.addAttribute("port", topic->getID());
     row << std::move(col);
     newTable << std::move(row);
   }
