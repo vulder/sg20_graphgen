@@ -2,6 +2,8 @@
 #include "sg20_graphgen/html_generator.h"
 #include "sg20_graphgen/modules.h"
 
+#include "yaml-cpp/exceptions.h"
+
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/flags/usage.h"
@@ -31,15 +33,20 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  auto MC = sg20::ModuleCollection::loadModulesFromFile(yamlInputFile);
+  try {
+    auto MC = sg20::ModuleCollection::loadModulesFromFile(yamlInputFile);
 
-  if (absl::GetFlag(FLAGS_useHTMLDotGraph)) {
-    sg20::emitHTMLDotGraph(MC,
-                           std::filesystem::path(absl::GetFlag(FLAGS_output)),
-                           absl::GetFlag(FLAGS_includeDependencies));
-  } else {
-    sg20::emitFullDotGraph(MC,
-                           std::filesystem::path(absl::GetFlag(FLAGS_output)));
+    if (absl::GetFlag(FLAGS_useHTMLDotGraph)) {
+      sg20::emitHTMLDotGraph(MC,
+                             std::filesystem::path(absl::GetFlag(FLAGS_output)),
+                             absl::GetFlag(FLAGS_includeDependencies));
+    } else {
+      sg20::emitFullDotGraph(
+          MC, std::filesystem::path(absl::GetFlag(FLAGS_output)));
+    }
+  } catch (YAML::Exception &e) {
+    std::cerr << "Syntax error in YAML " << yamlInputFile << std::endl;
+    std::cerr << "Got: " << e.what() << std::endl;
   }
 
   return 0;
