@@ -37,6 +37,19 @@ public:
   void addDependency(int TID) { deps.push_back(TID); }
   void addSoftDependency(int TID) { softDeps.push_back(TID); }
 
+  void removeDependency(int TID) {
+    auto foundDep = std::remove(deps.begin(), deps.end(), TID);
+    if (foundDep != deps.end()) {
+      deps.erase(foundDep);
+    }
+  }
+  void removeSoftDependency(int TID) {
+    auto foundDep = std::remove(softDeps.begin(), softDeps.end(), TID);
+    if (foundDep != softDeps.end()) {
+      softDeps.erase(foundDep);
+    }
+  }
+
   size_t numDependencies() const { return deps.size(); }
   size_t numSoftDependencies() const { return softDeps.size(); }
 
@@ -62,6 +75,8 @@ public:
     topics_list.push_back(std::make_unique<Topic>(std::move(name), TID));
     return *topics_list.back();
   }
+
+  Topic *getTopicByName(const std::string_view topicName);
 
   void removeTopic(const std::string_view topicName);
 

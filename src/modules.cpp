@@ -30,6 +30,16 @@ void Topic::dump(std::ostream &out) {
   out << "]\n";
 }
 
+Topic *Module::getTopicByName(const std::string_view topicName) {
+  for (auto &topic : topics()) {
+    if (topic->getName().compare(0, topic->getName().size(), topicName) == 0) {
+      return topic.get();
+    }
+  }
+
+  return nullptr;
+}
+
 void Module::removeTopic(const std::string_view topicName) {
   auto delTopicIter = std::find_if(
       topics_list.begin(), topics_list.end(),

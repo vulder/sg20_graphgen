@@ -42,7 +42,7 @@ CommandType convertToCommandType(const std::string_view rawCmd);
 
 void editModules(sg20::ModuleCollection &MC);
 void editTopics(sg20::ModuleCollection &MC);
-void editDependencies();
+void editDependencies(sg20::ModuleCollection &MC);
 
 int main(int argc, char *argv[]) {
   absl::SetProgramUsageMessage(
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
         editTopics(MC);
         break;
       case CommandType::EDIT_DEPENDENCY:
-        editDependencies();
+        editDependencies(MC);
         break;
       case CommandType::QUIT:
         keepRunning = false;
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
         break;
       }
     }
-    cout << "Save to output file (yes/no)?";
+    cout << "Save to output file (yes/no)?\n";
     std::string answer;
     cin >> answer;
     if (answer.compare(0, 1, "y") == 0 || answer.compare(0, 1, "Y") == 0) {
@@ -129,7 +129,12 @@ void editModules(sg20::ModuleCollection &MC) {
   std::string rawCmd;
   cin >> rawCmd;
 
-  if (rawCmd.compare(0, 3, "add") == 0) {
+  if (rawCmd.compare(0, 5, "delID") == 0) {
+    int moduleID;
+    cin >> moduleID;
+    MC.deleteModule(moduleID);
+    cout << "Deleted module";
+  } else if (rawCmd.compare(0, 3, "add") == 0) {
     cin >> rawCmd;
     auto &newModule = MC.addModule(std::move(rawCmd));
     std::cout << "New module added...\n";
@@ -143,11 +148,6 @@ void editModules(sg20::ModuleCollection &MC) {
     } else {
       cout << "Could not find module: " << rawCmd << "\n";
     }
-  } else if (rawCmd.compare(0, 5, "delID") == 0) {
-    int moduleID;
-    cin >> moduleID;
-    MC.deleteModule(moduleID);
-    cout << "Deleted module";
   }
 }
 
@@ -160,8 +160,12 @@ void editTopics(sg20::ModuleCollection &MC) {
 )";
   std::string rawCmd;
   cin >> rawCmd;
-
-  if (rawCmd.compare(0, 3, "add") == 0) {
+  if (rawCmd.compare(0, 5, "delID") == 0) {
+    int topicID;
+    cin >> topicID;
+    MC.getModuleFromTopicID(topicID);
+    // TODO: removing TOPIC needs to delete all dependencies to the topic
+  } else if (rawCmd.compare(0, 3, "add") == 0) {
     cin >> rawCmd;
     std::vector<std::string> splitInput = absl::StrSplit(rawCmd, ":");
     auto *topic = MC.addTopicToModule(splitInput[1], splitInput[0]);
@@ -177,11 +181,122 @@ void editTopics(sg20::ModuleCollection &MC) {
     } else {
       cout << "Could not find module: " << rawCmd << "\n";
     }
-  } else if (rawCmd.compare(0, 5, "delID") == 0) {
-    int topicID;
-    cin >> topicID;
-    MC.getModuleFromTopicID(topicID);
+    // TODO: removing TOPIC needs to delete all dependencies to the topic
   }
 }
 
-void editDependencies() {}
+void editDependencies(sg20::ModuleCollection &MC) {
+  cout << R"(
+Please select topic to work on:
+MODULE_NAME:TOPIC_NAME
+)";
+
+  std::string rawCmd;
+  cin >> rawCmd;
+
+  std::vector<std::string> splitInput = absl::StrSplit(rawCmd, ":");
+  // auto *topic = MC.addTopicToModule(splitInput[1], splitInput[0]); // TODO:
+  // fix
+  auto *baseModule = MC.getModuleFromName(splitInput[0]);
+  if (!baseModule) {
+    cout << "Could not find module: " << splitInput[0] << "\n";
+    return;
+  }
+
+  auto *baseTopic = baseModule->getTopicByName(splitInput[1]);
+  if (!baseTopic) {
+    cout << "Could not find topic: " << splitInput[1] << "\n";
+    return;
+  }
+
+  cout << R"(
++ Subcommands for adding dependencies  +
+│ add MODULE_NAME:TOPIC_NAME TYPE      │
+│ addID TOPIC_ID TYPE                  │
+│ del MODULE_NAME:TOPIC_NAME           │
+│ delID TOPIC_ID                       │
+└──────────────────────────────────────┘
+)";
+
+  cin >> rawCmd;
+
+  if (rawCmd.compare(0, 5, "addID") == 0) {
+    int topicID;
+    cin >> topicID;
+
+    std::string depType;
+    cin >> depType;
+
+    // TODO: needs check if topic ID exists
+
+    if (depType.compare(0, 4, "soft") == 0) {
+      baseTopic->addSoftDependency(topicID);
+    } else {
+      baseTopic->addDependency(topicID);
+    }
+  } else if (rawCmd.compare(0, 5, "delID") == 0) {
+    int topicID;
+    cin >> topicID;
+
+    std::string depType;
+    cin >> depType;
+
+    // TODO: needs check if topic ID exists
+
+    if (depType.compare(0, 4, "soft") == 0) {
+      baseTopic->removeSoftDependency(topicID);
+    } else {
+      baseTopic->removeDependency(topicID);
+    }
+  } else if (rawCmd.compare(0, 3, "add") == 0) {
+    cin >> rawCmd;
+    std::vector<std::string> splitInput = absl::StrSplit(rawCmd, ":");
+    std::string depType;
+    cin >> depType;
+
+    auto *targetModule = MC.getModuleFromName(splitInput[0]);
+    if (!targetModule) {
+      cout << "Could not find dependency target module: " << splitInput[0]
+           << "\n";
+      return;
+    }
+    auto *targetTopic = targetModule->getTopicByName(splitInput[1]);
+    if (!targetTopic) {
+      cout << "Could not find dependency target topic: " << splitInput[1]
+           << "\n";
+      return;
+    }
+
+    if (depType.compare(0, 4, "soft") == 0) {
+      baseTopic->addSoftDependency(targetTopic->getID());
+    } else {
+      baseTopic->addDependency(targetTopic->getID());
+    }
+
+  } else if (rawCmd.compare(0, 3, "del") == 0) {
+    cin >> rawCmd;
+    std::vector<std::string> splitInput = absl::StrSplit(rawCmd, ":");
+
+    std::string depType;
+    cin >> depType;
+
+    auto *targetModule = MC.getModuleFromName(splitInput[0]);
+    if (!targetModule) {
+      cout << "Could not find dependency target module: " << splitInput[0]
+           << "\n";
+      return;
+    }
+    auto *targetTopic = targetModule->getTopicByName(splitInput[1]);
+    if (!targetTopic) {
+      cout << "Could not find dependency target topic: " << splitInput[1]
+           << "\n";
+      return;
+    }
+
+    if (depType.compare(0, 4, "soft") == 0) {
+      baseTopic->removeSoftDependency(targetTopic->getID());
+    } else {
+      baseTopic->removeDependency(targetTopic->getID());
+    }
+  }
+}
