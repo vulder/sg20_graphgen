@@ -30,9 +30,19 @@ void Topic::dump(std::ostream &out) {
   out << "]\n";
 }
 
-Topic *Module::getTopicByName(const std::string_view topicName) {
+Topic *Module::getTopicByName(const std::string_view topicName) const {
   for (auto &topic : topics()) {
     if (topic->getName().compare(0, topic->getName().size(), topicName) == 0) {
+      return topic.get();
+    }
+  }
+
+  return nullptr;
+}
+
+Topic *Module::getTopicByID(int topicID) const {
+  for (auto &topic : topics()) {
+    if (topic->getID() == topicID) {
       return topic.get();
     }
   }
@@ -165,6 +175,15 @@ Module *ModuleCollection::getModuleFromName(std::string_view moduleName) const {
   return nullptr;
 }
 
+Module *ModuleCollection::getModuleFromID(int moduleID) const {
+  for (auto &module : modules()) {
+    if (module->getModuleID() == moduleID) {
+      return module.get();
+    }
+  }
+  return nullptr;
+}
+
 Module &ModuleCollection::addModule(std::string moduleName) {
   modules_storage.push_back(
       std::make_unique<Module>(std::move(moduleName), getNextFreeModuleID()));
@@ -185,9 +204,14 @@ Topic *ModuleCollection::addTopicToModule(std::string topicName,
   std::cout << moduleName << "\n";
   auto *module = getModuleFromName(moduleName);
   if (module) {
-    return &module->addTopic(std::move(topicName), getNextFreeTopicID());
+    return addTopicToModule(std::move(topicName), *module);
   }
   return nullptr;
+}
+
+Topic *ModuleCollection::addTopicToModule(std::string topicName,
+                                          Module &module) {
+  return &module.addTopic(std::move(topicName), getNextFreeTopicID());
 }
 
 int ModuleCollection::getNextFreeModuleID() const {

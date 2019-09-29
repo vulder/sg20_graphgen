@@ -76,7 +76,13 @@ public:
     return *topics_list.back();
   }
 
-  Topic *getTopicByName(const std::string_view topicName);
+  // Tries to find a topic with the specified topic name.
+  // If found returns the topic, otherwise, nullptr.
+  Topic *getTopicByName(const std::string_view topicName) const;
+
+  // Tries to find a topic with the specified topic ID.
+  // If found returns the topic, otherwise, nullptr.
+  Topic *getTopicByID(int topicID) const;
 
   void removeTopic(const std::string_view topicName);
 
@@ -140,11 +146,16 @@ public:
   // If found returns the module, otherwise, nullptr.
   Module *getModuleFromName(std::string_view moduleName) const;
 
+  // Tries to find a module with the specified module ID.
+  // If found returns the module, otherwise, nullptr.
+  Module *getModuleFromID(int moduleID) const;
+
   Module &addModule(std::string moduleName);
   void deleteModule(int moduleID);
 
   Topic *addTopicToModule(std::string topicName,
                           const std::string_view moduleName);
+  Topic *addTopicToModule(std::string topicName, Module &module);
 
 private:
   ModuleCollection() = default;
