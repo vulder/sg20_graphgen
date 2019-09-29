@@ -65,16 +65,16 @@ void emitFullDotGraph(const ModuleCollection &moduleCollection,
         module->getModuleName();
     get_property(sub_graph, graph_vertex_attribute)["shape"] = "Mrecord";
 
-    for (auto topic : module->topics()) {
-      int TID = topic.getID();
+    for (auto &topic : module->topics()) {
+      int TID = topic->getID();
       add_vertex(TID, sub_graph);
-      get(vertex_attribute_t(), graph)[TID]["label"] = topic.getName();
+      get(vertex_attribute_t(), graph)[TID]["label"] = topic->getName();
 
-      for (auto dep : topic.dependencies()) {
+      for (auto dep : topic->dependencies()) {
         boost::add_edge(TID, dep, graph);
       }
 
-      for (auto dep : topic.softDependencies()) {
+      for (auto dep : topic->softDependencies()) {
         auto newInstEdge = boost::add_edge(TID, dep, graph);
         get(edge_attribute, graph)[newInstEdge.first]["style"] = "dotted";
       }
@@ -89,19 +89,19 @@ void emitFullDotGraph(const ModuleCollection &moduleCollection,
 void generateDependencies(const ModuleCollection &moduleCollection,
                           std::ofstream &out) {
   for (auto &module : moduleCollection.modules()) {
-    for (auto topic : module->topics()) {
-      for (auto dep : topic.dependencies()) {
+    for (auto &topic : module->topics()) {
+      for (auto dep : topic->dependencies()) {
         Module *depModule = moduleCollection.getModuleFromTopicID(dep);
         if (depModule) {
-          out << module->getModuleID() << ":" << topic.getID() << " -> "
+          out << module->getModuleID() << ":" << topic->getID() << " -> "
               << depModule->getModuleID() << ":" << dep << ";\n";
         }
       }
 
-      for (auto dep : topic.softDependencies()) {
+      for (auto dep : topic->softDependencies()) {
         Module *depModule = moduleCollection.getModuleFromTopicID(dep);
         if (depModule) {
-          out << module->getModuleID() << ":" << topic.getID() << " -> "
+          out << module->getModuleID() << ":" << topic->getID() << " -> "
               << depModule->getModuleID() << ":" << dep << "[style=\""
               << "dotted"
               << "\"]"
