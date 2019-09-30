@@ -20,7 +20,7 @@ bin/graphgen --graph_yaml d1725.yaml
 ```bash
 dot -Tpng sg20_graph.dot -o sg20_graph.png
 ```
-Depending on the generated graph and its dependencies, different graphviz layouting algorithms are needed to make the generated drawing visually appealing.
+Depending on the generated graph and its dependencies, different graphviz layouting algorithms are needed to make the generated drawing visually appealing. Try: `dot, neato, twopi, circo, fdp, sfdp, patchwork, osage`
 
 ### Step 3: visualize
 ```bash
