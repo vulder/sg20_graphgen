@@ -23,7 +23,7 @@ target_link_libraries(graphgen
 )
 
 add_executable(yamlEditor 
-  yaml_editor.cpp
+  yamlEditor.cpp
 )
 target_link_libraries(yamlEditor
   sg20_graphgen

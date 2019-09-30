@@ -121,6 +121,8 @@ public:
                                  std::filesystem::path filepath);
 
 public:
+  ModuleCollection() = default;
+
   auto modules_begin() { return modules_storage.begin(); }
   auto modules_end() { return modules_storage.end(); }
   auto modules_begin() const { return modules_storage.begin(); }
@@ -158,7 +160,6 @@ public:
   Topic *addTopicToModule(std::string topicName, Module &module);
 
 private:
-  ModuleCollection() = default;
   int getNextFreeModuleID() const;
   int getNextFreeTopicID() const;
 

@@ -259,6 +259,12 @@ void handleAddModule(sg20::ModuleCollection &MC) {
   std::getline(cin, newModuleName);
   newModuleName = absl::StripLeadingAsciiWhitespace(
       absl::StripTrailingAsciiWhitespace(newModuleName));
+
+  if (newModuleName.empty()) {
+    cerr << "Module name was empty\n";
+    return;
+  }
+
   sg20::Module &newModule = MC.addModule(newModuleName);
   cout << "Create new module: " << newModule.getModuleName()
        << "  (ID: " << newModule.getModuleID() << ")"
@@ -286,10 +292,9 @@ void handleListTopics(sg20::ModuleCollection &MC) {
 
   cout << "Found the following topics for " << reqModule->getModuleName()
        << ":\n";
-  // TODO: align fmt
   for (auto &topic : reqModule->topics()) {
-    cout << "Name: " << topic->getName() << "  (ID: " << topic->getID() << ")"
-         << "\n";
+    cout << "(ID: " << topic->getID() << ")  "
+         << "Name: " << topic->getName() << "\n";
   }
 }
 
@@ -313,6 +318,10 @@ void handleAddTopic(sg20::ModuleCollection &MC) {
                                 : MC.getModuleFromName(splitInput[0]);
   if (!reqModule) {
     cerr << "Could not find module \"" << splitInput[0] << "\"\n";
+    return;
+  }
+  if (splitInput[1].empty()) {
+    cerr << "Topic name was empty\n";
     return;
   }
   sg20::Topic *newTopic =
@@ -392,41 +401,73 @@ void handleDeleteDependency(sg20::ModuleCollection &MC) {
 }
 
 void handleListDependencies(sg20::ModuleCollection &MC) {
-  cout << "For which topic should we print all dependencies?\n";
   auto [reqModule, reqTopic] = getModuleAndTopicFromUser(MC);
   if (!reqModule || !reqTopic) {
     return; // if user input was wrong return to main menu
   }
 
-  cout << "Found the following dependencies for " << reqTopic->getName()
-       << "\n";
-  for (auto dep : reqTopic->dependencies()) {
-    // TODO: write dependency name look up
-    cout << "-> " << dep << "\n";
+  cout << "Found the following dependencies for [" << reqModule->getModuleName()
+       << ":" << reqTopic->getName() << "]\n";
+  if (reqTopic->numDependencies() > 0) {
+    cout << "Dependencies:\n";
+    for (auto dep : reqTopic->dependencies()) {
+      sg20::Module *depModule = MC.getModuleFromTopicID(dep);
+      if (depModule) {
+        const sg20::Topic *depTopic = depModule->findTopic(dep);
+        // guarantee to be found, because we already found the module based on
+        // the topic ID
+        assert(depModule && "Module for topic ID did not contain topic.");
+
+        cout << "-> " << depTopic->getName() << "\n";
+      } else {
+        assert(false &&
+               "Inconsistent yaml file, could not find module with topic of "
+               "dependencie.");
+      }
+    }
   }
-  cout << "Found the following soft dependencies for " << reqTopic->getName()
-       << "\n";
-  for (auto softDep : reqTopic->softDependencies()) {
-    // TODO: write dependency name look up
-    cout << "~> " << softDep << "\n";
+  if (reqTopic->numSoftDependencies() > 0) {
+    cout << "Soft dependencies:\n";
+    for (auto softDep : reqTopic->softDependencies()) {
+      sg20::Module *depModule = MC.getModuleFromTopicID(softDep);
+      if (depModule) {
+        const sg20::Topic *depTopic = depModule->findTopic(softDep);
+        // guarantee to be found, because we already found the module based on
+        // the topic ID
+        assert(depModule && "Module for topic ID did not contain topic.");
+
+        cout << "~> " << depTopic->getName() << "\n";
+      } else {
+        assert(false &&
+               "Inconsistent yaml file, could not find module with topic of "
+               "dependencie.");
+      }
+    }
   }
 }
 
 int main(int argc, char *argv[]) {
   absl::SetProgramUsageMessage(
-      absl::StrCat("Generate dot files for the SG20 module graph.\n\n",
-                   "Example usage: ", argv[0], " --output fullgraph.dot"));
+      absl::StrCat("Create and edit SG20 teaching module yaml files.\n\n",
+                   "Example usage: ", argv[0], " --output newModuleFile.yaml"));
   absl::ParseCommandLine(argc, argv);
 
   auto yamlInputFile = std::filesystem::path(absl::GetFlag(FLAGS_graph_yaml));
+  bool initNewModuleCollection = false;
   if (!std::filesystem::exists(yamlInputFile)) {
-    std::cerr << "Yaml input file does not exist."
-              << "\n";
-    return 1;
+    if (yamlInputFile.compare("sg20_graph.yaml") == 0) {
+      initNewModuleCollection = true;
+    } else {
+      std::cerr << "Yaml input file does not exist."
+                << "\n";
+      return 1;
+    }
   }
 
   try {
-    auto MC = sg20::ModuleCollection::loadModulesFromFile(yamlInputFile);
+    auto MC = initNewModuleCollection
+                  ? sg20::ModuleCollection()
+                  : sg20::ModuleCollection::loadModulesFromFile(yamlInputFile);
 
     bool keepRunning = true;
     printHelp();

@@ -26,3 +26,15 @@ Depending on the generated graph and its dependencies, different graphviz layout
 ```bash
 feh sg20_graph.png
 ```
+
+## Editing yaml files
+A simple yaml file is the base for specifying modules, topics, and dependencies between them.
+To allow for easier creation and editing of these file, we provide a small yaml-editor.
+Create a new yaml file `newFile` with:
+```bash
+bin/yamlEditor --output newFile.yaml
+```
+or edit an existing file with:
+```bash
+bin/yamlEditor --graph_yaml inputFile.yaml --output newFile.yaml
+```
