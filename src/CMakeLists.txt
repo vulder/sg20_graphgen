@@ -28,3 +28,10 @@ add_executable(yamlEditor
 target_link_libraries(yamlEditor
   sg20_graphgen
 )
+
+add_executable(HTMLGenerator
+  HTMLGenerator.cpp
+)
+target_link_libraries(HTMLGenerator
+  sg20_graphgen
+)

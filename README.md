@@ -38,3 +38,8 @@ or edit an existing file with:
 ```bash
 bin/yamlEditor --graph_yaml inputFile.yaml --output newFile.yaml
 ```
+
+## Generating the HTML table for standard doc
+```bash
+bin/HTMLGenerator --graph_yaml d1725.yaml
+```
